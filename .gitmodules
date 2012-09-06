@@ -1,0 +1,3 @@
+[submodule "lib/tracking"]
+	path = lib/tracking
+	url = git@github.com:brunofarache/tracking.js.git

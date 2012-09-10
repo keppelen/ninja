@@ -1,21 +1,25 @@
 
 (function (window) {
+	var constants = {
+		GRAVITY: 0.001,
+		ROTATION_ANGLE: Math.PI/12
+	};
+
 	function Fruit() {
 		this.rotation = 0;
 		this.clockwise = 1;
-		this.speedX = 1;
-		this.speedY = 1.8;
-		this.x = 145;
+		this.speedX = 3;
+		this.speedY = 8;
+		this.x = 20;
 		this.y = 210;
 		this.height = 30;
 		this.width = 30;
-		this.moving = false;
 		this.tick = 1;
 	};
 
 	Fruit.prototype.move = function() {
 		this.x += this.speedX;
-		this.y -= (this.speedY * this.tick) - (0.18 * Math.pow(this.tick, 2))/2;
+		this.y -= this.speedY - (this.speedY * constants.GRAVITY * Math.pow(this.tick, 2));
 
 		this.tick++;
 	};
@@ -29,25 +33,21 @@
 		context.translate(translateX, translateY);
 		context.rotate(this.rotation);
 		context.translate((-1 * translateX), (-1 * translateY));
-		context.fillStyle = "rgb(255,0,0)";
-		context.fillRect(this.x, this.y, this.width, this.height);
-		
-		context.restore();
 
-		this.rotate();
-		
-		if (this.moving) {
-			this.move();
-		}
+		var img = new Image();
+  		img.src = 'images/apple.png';
+		context.drawImage(img, this.x, this.y);
+
+		context.restore();
 	};
 
 	Fruit.prototype.rotate = function() {
-		this.rotation = this.rotation + (Math.PI/24 * this.clockwise);
+		this.rotation = this.rotation + (constants.ROTATION_ANGLE * this.clockwise);
 	};
 
 	var game = {
 		drawSegments: [],
-		fruits: [new Fruit()],
+		fruits: [],
 		context: null,
 
 		init: function() {
@@ -69,6 +69,7 @@
 			);
 
 			instance.loop();
+			setInterval(instance.fruitWave, 5000);
 		},
 
 		checkCollision: function(fruit) {
@@ -80,9 +81,10 @@
 				if ((x > fruit.x) && (x < (fruit.x + fruit.width)) &&
 					(y > fruit.y) && (y < (fruit.y + fruit.height))) {
 
-					fruit.move();
-					fruit.moving = true;
-					console.log('colidiu');
+					return true;
+				}
+				else {
+					return false;
 				}
 		},
 
@@ -93,10 +95,15 @@
 				var fruit = instance.fruits[i];
 
 				fruit.render();
+				fruit.rotate();
 
 				if (instance.drawSegments.length > 0) {
-					instance.checkCollision(fruit);
+					if (instance.checkCollision(fruit)) {
+						console.log('scored');
+					}
 				}
+
+				fruit.move();
 			}
 		},
 
@@ -125,6 +132,12 @@
 			if (remove > 0) {
 				instance.drawSegments.splice(0, remove);
 			}
+		},
+
+		fruitWave: function() {
+			var instance = game;
+
+			instance.fruits.push(new Fruit());
 		},
 
 		loop: function() {

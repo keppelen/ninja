@@ -53,6 +53,7 @@
 		drawSegments: [],
 		fruits: [],
 		context: null,
+		score: 0,
 
 		init: function() {
 			var instance = this,
@@ -112,7 +113,21 @@
 
 			for (var j = 0, len = scores.length; j < len; j++) {
 				instance.fruits.splice(scores[j], 1);
+				instance.score++;
 			}
+		},
+
+		renderScore: function() {
+			var instance = game;
+
+			context.save();
+
+			context.scale(-1, 1);
+			context.fillStyle = "Red";
+			context.font = "12pt Arial";
+			context.fillText('Score: ' + game.score, -70, 230);
+
+			context.restore();
 		},
 
 		renderTrail: function() {
@@ -171,6 +186,7 @@
 
 			instance.renderTrail();
 			instance.renderFruits();
+			instance.renderScore();
 
 			requestAnimationFrame(instance.loop);
 		}

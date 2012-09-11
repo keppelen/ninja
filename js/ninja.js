@@ -8,13 +8,14 @@
 					[65, 1.5, 8.3], [82, 7.5, 2], [155, 0.7, 9.4], [94, 4.3, 4],  [105, 3.8, 7.6], [  5, 2.7, 7.8], [ 12, 7, 7]] // x, speedX, speedY 
 	};
 
-	function Fruit(config) {
+	function Fruit(config, bomb) {
 		this.x = config[0];
 		this.y = 210;
 		this.clockwise =  (this.x < constants.CANVAS_WIDTH/2) ? 1 : -1;
 		this.speedX = config[1];
 		this.speedY = config[2];
 
+		this.bomb = bomb;
 		this.rotation = 0;
 		this.height = 30;
 		this.width = 30;
@@ -95,15 +96,22 @@
 
 		renderFruits: function() {
 			var instance = game,
-				scores = [];
+				sliced = instance.fruits.slice(0);
 
 			for (var i = 0, len = instance.fruits.length; i < len; i++) {
 				var fruit = instance.fruits[i];
 
-				if (instance.drawSegments.length > 0) {
-					if (instance.checkCollision(fruit)) {
-						scores.push(i);
+				if ((instance.drawSegments.length > 0) && instance.checkCollision(fruit)) {
+					if (fruit.bomb && (instance.score > 0)) {
+						instance.score--;
 					}
+					else {
+						instance.score++;
+					}
+
+					sliced.splice(i, 1);
+
+					continue;
 				}
 
 				fruit.render();
@@ -111,10 +119,7 @@
 				fruit.move();
 			}
 
-			for (var j = 0, len = scores.length; j < len; j++) {
-				instance.fruits.splice(scores[j], 1);
-				instance.score++;
-			}
+			instance.fruits = sliced;
 		},
 
 		renderScore: function() {
@@ -173,7 +178,7 @@
 					x = constants.CANVAS_WIDTH - x;
 				}
 
-				var fruit = new Fruit([x, position[1], position[2]]);
+				var fruit = new Fruit([x, position[1], position[2]], false);
 
 				instance.fruits.push(fruit);
 

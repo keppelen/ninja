@@ -1,24 +1,28 @@
 
 (function (window) {
 	var constants = {
+		CANVAS_WIDTH: 320,
 		GRAVITY: 0.001,
-		ROTATION_ANGLE: Math.PI/12
+		ROTATION_ANGLE: Math.PI/12,
+		POSITIONS: [[20,   5,   7], [30,   4, 8], [40,    3,   9], [50,   1, 5],  [100,   2,  10], [140,   1,   9], [150, 3, 9],
+					[65, 1.5, 8.3], [82, 7.5, 2], [155, 0.7, 9.4], [94, 4.3, 4],  [105, 3.8, 7.6], [  5, 2.7, 7.8], [ 12, 7, 7]] // x, speedX, speedY 
 	};
 
-	function Fruit() {
-		this.rotation = 0;
-		this.clockwise = 1;
-		this.speedX = 3;
-		this.speedY = 8;
-		this.x = 20;
+	function Fruit(config) {
+		this.x = config[0];
 		this.y = 210;
+		this.clockwise =  (this.x < constants.CANVAS_WIDTH/2) ? 1 : -1;
+		this.speedX = config[1];
+		this.speedY = config[2];
+
+		this.rotation = 0;
 		this.height = 30;
 		this.width = 30;
 		this.tick = 1;
 	};
 
 	Fruit.prototype.move = function() {
-		this.x += this.speedX;
+		this.x += this.speedX * this.clockwise;
 		this.y -= this.speedY - (this.speedY * constants.GRAVITY * Math.pow(this.tick, 2));
 
 		this.tick++;
@@ -89,21 +93,25 @@
 		},
 
 		renderFruits: function() {
-			var instance = game;
+			var instance = game,
+				scores = [];
 
 			for (var i = 0, len = instance.fruits.length; i < len; i++) {
 				var fruit = instance.fruits[i];
 
-				fruit.render();
-				fruit.rotate();
-
 				if (instance.drawSegments.length > 0) {
 					if (instance.checkCollision(fruit)) {
-						console.log('scored');
+						scores.push(i);
 					}
 				}
 
+				fruit.render();
+				fruit.rotate();
 				fruit.move();
+			}
+
+			for (var j = 0, len = scores.length; j < len; j++) {
+				instance.fruits.splice(scores[j], 1);
 			}
 		},
 
@@ -135,9 +143,27 @@
 		},
 
 		fruitWave: function() {
-			var instance = game;
+			var instance = game,
+				availablePositions = constants.POSITIONS.slice(0);
 
-			instance.fruits.push(new Fruit());
+			instance.fruits = [];
+			
+			for (var i = 0; i < 3; i++) {
+				var index = Math.floor(Math.random() * availablePositions.length),
+					position = availablePositions[index],
+					direction = Math.round(Math.random()),
+					x = position[0];
+
+				if (direction) {
+					x = constants.CANVAS_WIDTH - x;
+				}
+
+				var fruit = new Fruit([x, position[1], position[2]]);
+
+				instance.fruits.push(fruit);
+
+				availablePositions.splice(index, 1);
+			};
 		},
 
 		loop: function() {

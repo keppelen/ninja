@@ -1,8 +1,10 @@
 
 (function (window) {
 	var constants = {
+		CANVAS_HEIGHT: 240,
 		CANVAS_WIDTH: 320,
 		GRAVITY: 0.001,
+		MAX_WAVES: 5,
 		ROTATION_ANGLE: Math.PI/12,
 		POSITIONS: [[20,   5,   7], [30,   4, 8], [40,    3,   9], [50,   1, 5],  [100,   2,  10], [140,   1,   9], [150, 3, 9],
 					[65, 1.5, 8.3], [82, 7.5, 2], [155, 0.7, 9.4], [94, 4.3, 4],  [105, 3.8, 7.6], [  5, 2.7, 7.8], [ 12, 7, 7]] // x, speedX, speedY 
@@ -16,9 +18,10 @@
 		this.speedY = config[2];
 
 		this.bomb = bomb;
+		this.image = bomb ? 'images/bomb.png' : 'images/ninja.png';
 		this.rotation = 0;
 		this.height = 30;
-		this.width = 30;
+		this.width = bomb ? 41 : 32;
 		this.tick = 1;
 	};
 
@@ -40,7 +43,7 @@
 		context.translate((-1 * translateX), (-1 * translateY));
 
 		var img = new Image();
-  		img.src = 'images/apple.png';
+  		img.src = this.image;
 		context.drawImage(img, this.x, this.y);
 
 		context.restore();
@@ -54,6 +57,9 @@
 		drawSegments: [],
 		fruits: [],
 		context: null,
+		intervalId: 0,
+		finished: false,
+		wave: 0,
 		score: 0,
 
 		init: function() {
@@ -75,7 +81,8 @@
 			);
 
 			instance.loop();
-			setInterval(instance.fruitWave, 5000);
+
+			instance.intervalId = setInterval(instance.fruitWave, 5000);
 		},
 
 		checkCollision: function(fruit) {
@@ -94,6 +101,20 @@
 				}
 		},
 
+		gameOver: function() {
+			var instance = game;
+
+			context.save();
+
+			context.scale(-1, 1);
+			context.textAlign = "center";
+			context.fillStyle = "Red";
+			context.font = "20pt Arial";
+			context.fillText('Scored ' + game.score, -constants.CANVAS_WIDTH/2, constants.CANVAS_HEIGHT/2);
+
+			context.restore();
+		},
+
 		renderFruits: function() {
 			var instance = game,
 				sliced = instance.fruits.slice(0);
@@ -102,7 +123,7 @@
 				var fruit = instance.fruits[i];
 
 				if ((instance.drawSegments.length > 0) && instance.checkCollision(fruit)) {
-					if (fruit.bomb && (instance.score > 0)) {
+					if (fruit.bomb && (instance.score > 0))	 {
 						instance.score--;
 					}
 					else {
@@ -168,7 +189,7 @@
 
 			instance.fruits = [];
 			
-			for (var i = 0; i < 3; i++) {
+			for (var i = 0; i < 4; i++) {
 				var index = Math.floor(Math.random() * availablePositions.length),
 					position = availablePositions[index],
 					direction = Math.round(Math.random()),
@@ -178,20 +199,41 @@
 					x = constants.CANVAS_WIDTH - x;
 				}
 
-				var fruit = new Fruit([x, position[1], position[2]], false);
+				var bomb = false;
+
+				if (i == 0) {
+					bomb = true;
+				}
+
+				var fruit = new Fruit([x, position[1], position[2]], bomb);
 
 				instance.fruits.push(fruit);
 
 				availablePositions.splice(index, 1);
 			};
+
+			instance.wave++;
+
+			if (game.wave >= constants.MAX_WAVES) {
+				clearInterval(instance.intervalId);
+
+				setTimeout(function () {
+					instance.finished = true;
+				}, 4000);
+			}
 		},
 
 		loop: function() {
 			var instance = game;
 
-			instance.renderTrail();
-			instance.renderFruits();
-			instance.renderScore();
+			if (!instance.finished) {
+				instance.renderTrail();
+				instance.renderFruits();
+				instance.renderScore();
+			}
+			else {
+				instance.gameOver();
+			}
 
 			requestAnimationFrame(instance.loop);
 		}
